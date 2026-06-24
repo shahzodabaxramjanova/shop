@@ -2,6 +2,12 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
-    path('create-list/', create_list_shop),
-    path('detail-delete-update/<int:pk>/', detail_delete_update_shop),
+    path(
+        'create-list/',
+        CreateListShopAPIView.as_view()
+    ),
+    path(
+        'detail-delete-update/<int:pk>/',
+        DetailDeleteUpdateShopAPIView.as_view()
+    ),
 ]

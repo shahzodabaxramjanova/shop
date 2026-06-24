@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -9,12 +9,29 @@ from .serializer import ShopSerializer
 # Create your views here.
 
 
-@api_view(['POST', 'GET'])
-def create_list_shop(request):
+class CreateListShopAPIView(APIView):
 
-    if request.method == 'POST':
+    def get(self, request):
 
-        serializer = ShopSerializer(data=request.data)
+        shops = Shop.objects.all()
+
+        serializer = ShopSerializer(
+            shops,
+            many=True
+        )
+
+        return Response({
+            'count': shops.count(),
+            'msg': 'list',
+            'status': status.HTTP_200_OK,
+            'data': serializer.data
+        })
+
+    def post(self, request):
+
+        serializer = ShopSerializer(
+            data=request.data
+        )
 
         if serializer.is_valid():
             serializer.save()
@@ -30,25 +47,14 @@ def create_list_shop(request):
             'status': status.HTTP_400_BAD_REQUEST
         })
 
-    elif request.method == 'GET':
 
-        shops = Shop.objects.all()
+class DetailDeleteUpdateShopAPIView(APIView):
 
-        serializer = ShopSerializer(shops, many=True)
+    def get_object(self, pk):
 
-        return Response({
-            'count': shops.count(),
-            'msg': 'list',
-            'status': status.HTTP_200_OK,
-            'data': serializer.data
-        })
-
-
-@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
-def detail_delete_update_shop(request, pk):
-
-    def get_object():
-        shop = Shop.objects.filter(pk=pk).first()
+        shop = Shop.objects.filter(
+            pk=pk
+        ).first()
 
         if not shop:
             raise ValidationError({
@@ -58,9 +64,11 @@ def detail_delete_update_shop(request, pk):
 
         return shop
 
-    if request.method == 'GET':
+    def get(self, request, pk):
 
-        serializer = ShopSerializer(get_object())
+        serializer = ShopSerializer(
+            self.get_object(pk)
+        )
 
         return Response({
             'msg': 'detail',
@@ -68,14 +76,17 @@ def detail_delete_update_shop(request, pk):
             'data': serializer.data
         })
 
-    elif request.method == 'PUT':
+    def put(self, request, pk):
 
         serializer = ShopSerializer(
-            instance=get_object(),
+            instance=self.get_object(pk),
             data=request.data
         )
 
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(
+            raise_exception=True
+        )
+
         serializer.save()
 
         return Response({
@@ -84,15 +95,18 @@ def detail_delete_update_shop(request, pk):
             'data': serializer.data
         })
 
-    elif request.method == 'PATCH':
+    def patch(self, request, pk):
 
         serializer = ShopSerializer(
-            instance=get_object(),
+            instance=self.get_object(pk),
             data=request.data,
             partial=True
         )
 
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(
+            raise_exception=True
+        )
+
         serializer.save()
 
         return Response({
@@ -101,12 +115,11 @@ def detail_delete_update_shop(request, pk):
             'data': serializer.data
         })
 
-    elif request.method == 'DELETE':
+    def delete(self, request, pk):
 
-        get_object().delete()
+        self.get_object(pk).delete()
 
         return Response({
             'msg': 'deleted',
             'status': status.HTTP_204_NO_CONTENT
         })
-
